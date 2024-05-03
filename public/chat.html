@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Real-Time Chat</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
+        integrity="sha512-iBBXm8fW90+nuLcSKlbmrPcLa0OT92xO1BIsZ+ywDWZCvqsWgccV3gFoRBv0z+8dLJgyAHIhR35VZc2oM/gI1w=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f0f0f0;
+        }
+
+        #chat-container {
+            width: 600px;
+            height: 500px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        #chat-window {
+            flex-grow: 1;
+            padding: 10px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        #message-form {
+            display: flex;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-top: 1px solid #ccc;
+        }
+
+        #message-input {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        #send-button {
+            margin-left: 10px;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+
+        #send-button i {
+            margin-right: 5px;
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        #file-button {
+            margin-left: 10px;
+            background-color: #2196f3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+
+        #file-button i {
+            margin-right: 5px;
+        }
+
+        #image-button {
+            margin-left: 10px;
+            background-color: #e53935;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+
+        #image-button i {
+            margin-right: 5px;
+        }
+
+        .message {
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 10px;
+            max-width: 70%;
+            align-self: flex-start;
+        }
+
+        .image {
+            max-width: 300px;
+            border-radius: 10px;
+            align-self: flex-start;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="chat-container">
+        <div id="chat-window"></div>
+        <form id="message-form">
+            <input type="text" id="message-input" placeholder="Type your message..." />
+            <label id="file-button" for="file-input">
+                <i class="fas fa-paperclip"></i> Attach File
+            </label>
+            <input type="file" id="file-input" accept="image/*" />
+            <label id="image-button" for="file-input">
+                <i class="fas fa-image"></i> Share Image
+            </label>
+            <button type="submit" id="send-button">
+                <i class="fas fa-paper-plane"></i> Send
+            </button>
+        </form>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        const chatWindow = document.getElementById('chat-window');
+        const messageForm = document.getElementById('message-form');
+        const messageInput = document.getElementById('message-input');
+        const fileInput = document.getElementById('file-input');
+
+        messageForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const message = messageInput.value.trim();
+            if (message) {
+                socket.emit('chat message', message);
+                messageInput.value = '';
+            }
+        });
+
+        socket.on('chat message', (msg) => {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message');
+            messageElement.textContent = msg;
+            chatWindow.appendChild(messageElement);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const imageData = reader.result;
+                    const imageElement = document.createElement('img');
+                    imageElement.classList.add('image');
+                    imageElement.src = imageData;
+                    imageElement.title = file.name;
+                    chatWindow.appendChild(imageElement);
+                    socket.emit('image', { data: imageData, name: file.name });
+                };
+                reader.readAsDataURL(file);
+            } else {
+                console.error('Please select an image file.');
+            }
+        });
+        socket.on('image', (data) => {
+            const imageElement = document.createElement('img');
+            imageElement.classList.add('image');
+            imageElement.src = data.data;
+            imageElement.title = data.name;
+            chatWindow.appendChild(imageElement);
+        });
+    </script>
+</body>
+
+</html>
+
+
+
+
+
